@@ -50,7 +50,11 @@ function wireApiDetail(o){
   $$('[data-labor-ok]').forEach(e=>e.onchange=()=>{const index=+e.dataset.laborOk,x=o.labor[index];if(!x)return;Api.command(o,'checks',{items:[{index,id:x.id,clientKey:x.clientKey,ok:e.checked}]})});
   $('#markAllFinal')?.addEventListener('change',e=>Api.command(o,'checks',{items:o.labor.map((x,index)=>({x,index})).filter(({x})=>String(x.d||'').trim()).map(({x,index})=>({index,id:x.id,clientKey:x.clientKey,ok:e.target.checked}))}));
  const m=$('#markAllFinal');if(m){const r=controlRows(o),n=r.filter(x=>x.ok).length;m.indeterminate=n>0&&n<r.length}
- $('#finishControl')?.addEventListener('click',()=>Api.command(o,'control',{}));
+  $('#finishControl')?.addEventListener('click',()=>{
+    if (controlRows(o).some(line => !line.ok)) { toast('Verifica todos los conceptos antes de registrar el control final'); return; }
+    Api.command(o,'control',{});
+  });
+  $('#serviceConformity')?.addEventListener('click',()=>openServiceConformity(o));
  $('#quotePdf')?.addEventListener('click',()=>documentPreview(o,'Cotización formal',true));
  $('#workPdf')?.addEventListener('click',()=>documentPreview(o,'Orden de servicio',false));
  $('#receptionPdf')?.addEventListener('click',async()=>{const r=await Api.reception(o);if(r)openReceptionSheet(o)});

@@ -206,3 +206,26 @@ function openReceptionSheet(o) {
   $('#closeModal').onclick = () => { $('#modalRoot').innerHTML = ''; };
   $('#printDoc').onclick = () => print();
 }
+
+function conformityDate(value) {
+  const parts = String(value || new Date().toISOString()).slice(0, 10).split('-');
+  return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : new Date().toLocaleDateString('es-PE');
+}
+
+function serviceConformitySheet(o) {
+  const reception = o.reception || {};
+  const services = (Array.isArray(o.labor) ? o.labor : []).filter(item => String(item.d || '').trim() && item.ok);
+  const controlDate = o.controlAt ? new Date(o.controlAt).toLocaleString('es-PE') : new Date().toLocaleString('es-PE');
+  const advisor = o.advisor || state.currentUser?.nombres || '';
+  const client = o.client || reception.client || '';
+  const phone = o.phone || reception.phone || '';
+  const mode = o.mode || reception.mode || 'Particular';
+
+  return `<div class="modal-backdrop"><div class="modal conformity-modal"><div class="modal-head"><strong>Acta de conformidad · una hoja A4</strong><div><button class="btn" id="printConformity">Imprimir / guardar PDF</button> <button class="btn" id="closeConformity">Cerrar</button></div></div><div class="modal-body conformity-preview"><article class="conformity-sheet"><header class="conformity-header"><img src="assets/logo_parautos.svg" alt="PARAUTOS"><div><h1>ACTA DE CONFORMIDAD DE SERVICIOS</h1><p>Orden de servicio: <strong>${shEscape(o.number)}</strong></p></div></header><div class="conformity-date">Trujillo, ${conformityDate(o.controlAt)}</div><p class="conformity-text">Mediante el presente documento, se deja constancia que se ha recibido a mi satisfacción los servicios brindados por PARAUTOS, servicios que corresponden al 100% del monto total de la orden de servicio suscrita. Por lo cual, procedo al retiro de mi unidad de las instalaciones de la empresa en mención.</p><section class="conformity-details"><div><b>NOMBRES Y APELLIDOS:</b> ${shEscape(client)}</div><div><b>DNI:</b> ${shEscape(o.doc || reception.doc || '')}</div><div><b>TELÉFONO:</b> ${shEscape(phone)}</div><div><b>TIPO DE SEGURO:</b> ${shEscape(mode)}</div><div><b>PLACA:</b> ${shEscape(o.plate)}</div><div><b>MARCA:</b> ${shEscape(o.brand)}</div><div><b>MODELO:</b> ${shEscape(o.model)}</div><div><b>COLOR:</b> ${shEscape(o.color)}</div></section><section class="conformity-control"><h2>CONTROL FINAL REGISTRADO</h2><p><b>Fecha y hora:</b> ${shEscape(controlDate)}<br><b>Asesor responsable:</b> ${shEscape(advisor)}</p><h3>Servicios verificados</h3><ul>${services.map(item => `<li>${shEscape(item.d)}</li>`).join('')}</ul></section><p class="conformity-text conformity-accept">Con mi firma acepto recibir mi vehículo con las reparaciones concluidas.</p><footer class="conformity-signature"><div><span></span><b>FIRMA DE CONFORMIDAD</b><small>Cliente</small></div><div><span></span><b>FIRMA DEL ASESOR</b><small>${shEscape(advisor)}</small></div></footer></article></div></div></div>`;
+}
+
+function openServiceConformity(o) {
+  $('#modalRoot').innerHTML = serviceConformitySheet(o);
+  $('#closeConformity').onclick = () => { $('#modalRoot').innerHTML = ''; };
+  $('#printConformity').onclick = () => print();
+}

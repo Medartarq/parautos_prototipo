@@ -8,6 +8,7 @@ Prototipo estatico del APF2. Simula los flujos principales del modulo web sin co
 - Panel de indicadores, alertas y busqueda de ordenes.
 - Registro de una orden: datos, checklist de 44 items, danos, evidencias, diagnostico y firma.
 - Cotizacion, repuestos, cambio de estado y control final.
+- Acta de conformidad de servicios imprimible tras completar todas las verificaciones del control final.
 - Reportes operativos de demostracion.
 - Consulta publica en `seguimiento.html` mediante placa y codigo.
 
