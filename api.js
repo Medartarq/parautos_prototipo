@@ -2,7 +2,8 @@
 const Api = (() => {
   const KEY = 'parautos-apf2-static-v1';
   const clone = value => structuredClone(value);
-  const user = { id: 2, nombres: 'Christian Cavero', nombreUsuario: 'crcavero', correo: 'ccavero@parautos.pe', activo: true };
+  const defaultUser = { id: 2, idRol: 2, nombres: 'Christian Cavero', nombreUsuario: 'crcavero', correo: 'ccavero@parautos.pe', activo: true };
+  let user = defaultUser;
 
   function save() {
     localStorage.setItem(KEY, JSON.stringify({ state: clone(state) }));
@@ -85,6 +86,8 @@ const Api = (() => {
   }
 
   async function init() {
+    const savedUser = JSON.parse(localStorage.getItem('parautos-apf2-user') || 'null');
+    user = savedUser?.idRol === 1 || savedUser?.idRol === 2 ? savedUser : defaultUser;
     const saved = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (saved?.state) state = normalizeState(saved.state);
     else { state = normalizeState({ orders: clone(seed), draft: freshDraft(), step: 1, route: 'dashboard', selected: 1, tab: 'summary', audit: [] }); await save(); }
