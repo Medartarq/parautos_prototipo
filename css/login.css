@@ -1,0 +1,173 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; min-height: 100vh; color: #333; }
+
+.login-page { display: flex; min-height: 100vh; }
+
+/* ---------------------------------------------------------------- Panel izquierdo */
+.left-panel {
+    flex: 1;
+    background: url('../assets/login-img/background.webp') no-repeat center center;
+    background-size: cover;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.left-shade { display: none; }
+
+.mobile-brand { display: none; }
+
+.placeholder-logo { font-size: 2rem; font-weight: bold; color: #d32f2f; margin-bottom: 20px; align-items: center; display: flex; justify-content: center; }
+.placeholder-logo img { display: block; }
+
+/* ---------------------------------------------------------------- Panel derecho */
+.right-panel {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+}
+
+.login-box { width: 100%; max-width: 350px; padding: 40px; }
+.lead { color: #666; font-size: .9rem; margin-bottom: 24px; }
+
+.form-group { margin-bottom: 18px; }
+.form-group label { display: block; margin-bottom: 6px; font-weight: 600; font-size: .9rem; }
+
+.field-control { position: relative; display: flex; align-items: center; }
+
+.field-icon {
+    position: absolute;
+    left: 12px;
+    width: 18px;
+    height: 18px;
+    fill: #8b8f96;
+    pointer-events: none;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px 12px 12px 40px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+    color: #333;
+    background: #fff;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #d32f2f;
+    box-shadow: 0 0 0 3px rgba(211, 47, 47, .12);
+}
+
+.btn-submit {
+    width: 100%;
+    padding: 15px;
+    background-color: #d32f2f;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+    font-family: inherit;
+    margin-top: 6px;
+}
+
+.btn-submit:hover { background-color: #b3261e; }
+.btn-submit:active { transform: translateY(1px); }
+
+.footer { margin-top: 28px; font-size: .8rem; text-align: center; color: #777; }
+.footer p { margin: 6px 0; }
+.footer a { color: #d32f2f; text-decoration: none; }
+.footer a:hover { text-decoration: underline; }
+
+/* ---------------------------------------------------------------- Movil */
+@media (max-width: 768px) {
+    body { background: #f2f3f5; }
+
+    .login-page { flex-direction: column; min-height: 100vh; }
+
+    /* Franja superior con la imagen del pintor */
+    .left-panel {
+        flex: 0 0 auto;
+        width: 100%;
+        height: 42vh;
+        min-height: 240px;
+        max-height: 340px;
+        background-position: center 30%;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Velo oscuro + desenfoque para que el logo se lea bien */
+    .left-shade {
+        display: block;
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(0,0,0,.30) 0%, rgba(0,0,0,.12) 55%, rgba(0,0,0,.38) 100%);
+        backdrop-filter: blur(2px);
+    }
+
+    /* Logo centrado en ambos ejes respecto de la imagen */
+    .mobile-brand {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        width: 100%;
+        padding: 0 16px;
+    }
+
+    .mobile-brand img { max-width: 168px; max-height: 64px; object-fit: contain; }
+
+    .desktop-brand { display: none; }
+
+    /* Formulario a pantalla casi completa */
+    .right-panel {
+        flex: 1 0 auto;
+        width: 100%;
+        align-items: flex-start;
+        background: transparent;
+        padding: 0 14px;
+    }
+
+    /* Mas aire entre la imagen de cabecera y el formulario */
+    .login-box {
+        max-width: 520px;
+        margin: 22px auto 0;
+        padding: 28px 22px calc(28px + env(safe-area-inset-bottom));
+        background: #fff;
+        border-radius: 18px;
+        box-shadow: 0 6px 24px rgba(0, 0, 0, .08);
+    }
+
+    h2 { font-size: 1.3rem; }
+    .lead { text-align: center; margin-bottom: 22px; }
+
+    /* Campos mas altos y comodos para el pulgar */
+    .form-group { margin-bottom: 20px; }
+    .form-group input {
+        height: 52px;
+        padding: 0 14px 0 44px;
+        font-size: 1rem;
+    }
+    .field-icon { left: 15px; width: 20px; height: 20px; }
+
+    .btn-submit { height: 54px; margin-top: 10px; font-size: 1.05rem; }
+
+    .footer { margin-top: 26px; font-size: .78rem; }
+}
+
+/* Pantallas muy estrechas */
+@media (max-width: 360px) {
+    .left-panel { height: 36vh; min-height: 200px; }
+    .right-panel { padding: 0 10px; }
+    .login-box { margin-top: 18px; padding: 24px 18px 26px; }
+    .form-group input { height: 50px; }
+    .btn-submit { height: 52px; }
+}
