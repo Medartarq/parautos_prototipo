@@ -47,8 +47,8 @@ function wireApiDetail(o){
     Api.command(o,'quote-approved',{date:date?.value||today});
   });
  $$('[data-part-check]').forEach((e,i)=>e.onchange=()=>{const p=o.parts[i];Api.command(o,'parts',{items:[{id:p.id,clientKey:p.clientKey,received:e.checked}]})});
- $$('[data-labor-ok]').forEach(e=>e.onchange=()=>{const x=o.labor[+e.dataset.laborOk];Api.command(o,'checks',{items:[{id:x.id,clientKey:x.clientKey,ok:e.checked}]})});
- $('#markAllFinal')?.addEventListener('change',e=>Api.command(o,'checks',{items:controlRows(o).map(x=>({id:x.id,clientKey:x.clientKey,ok:e.target.checked}))}));
+  $$('[data-labor-ok]').forEach(e=>e.onchange=()=>{const index=+e.dataset.laborOk,x=o.labor[index];if(!x)return;Api.command(o,'checks',{items:[{index,id:x.id,clientKey:x.clientKey,ok:e.checked}]})});
+  $('#markAllFinal')?.addEventListener('change',e=>Api.command(o,'checks',{items:o.labor.map((x,index)=>({x,index})).filter(({x})=>String(x.d||'').trim()).map(({x,index})=>({index,id:x.id,clientKey:x.clientKey,ok:e.target.checked}))}));
  const m=$('#markAllFinal');if(m){const r=controlRows(o),n=r.filter(x=>x.ok).length;m.indeterminate=n>0&&n<r.length}
  $('#finishControl')?.addEventListener('click',()=>Api.command(o,'control',{}));
  $('#quotePdf')?.addEventListener('click',()=>documentPreview(o,'Cotización formal',true));

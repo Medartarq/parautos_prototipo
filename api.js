@@ -48,7 +48,8 @@ const Api = (() => {
       if (part) { part.status = item.received ? 'RECIBIDO' : 'PENDIENTE_SOLICITAR'; part.updated = new Date().toLocaleDateString('es-PE'); }
     });
     if (resource === 'checks') (body.items || []).forEach(item => {
-      const line = o.labor.find(l => l.id === item.id || l.clientKey === item.clientKey);
+      // Legacy demo rows do not always have an id/clientKey, so use the UI index first.
+      const line = Number.isInteger(item.index) ? o.labor[item.index] : o.labor.find(l => l.id === item.id || l.clientKey === item.clientKey);
       if (line) line.ok = !!item.ok;
     });
     if (resource === 'quote-sent') { o.quote = 'ENVIADA'; o.sentDate = body.date || new Date().toISOString().slice(0, 10); o.status = 'ESPERA_APROBACION'; }
