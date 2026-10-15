@@ -68,7 +68,19 @@ const Api = (() => {
         if (part.status === 'RECIBIDO') { part.receivedAt = part.updatedAt; part.receivedBy = user.nombres; }
       }
     }
-    if (resource === 'parts-case-details') Object.assign(o, body.data || {});
+     if (resource === 'parts-case-details') Object.assign(o, body.data || {});
+     if (resource === 'case-details') {
+       const data = body.data || {};
+       o.client = String(data.client || '').trim();
+       o.phone = String(data.phone || '').trim();
+       o.email = String(data.email || '').trim();
+       o.color = String(data.color || '').trim();
+       o.colorType = data.colorType === 'PERSONALIZADO' ? 'PERSONALIZADO' : 'CATALOGO';
+       o.repairResponsible = String(data.repairResponsible || '').trim();
+       o.reception = o.reception || {};
+       o.reception.km = String(data.km || '').trim();
+       o.reception.fuel = String(data.fuel || '').trim();
+     }
     if (resource === 'checks') (body.items || []).forEach(item => {
       // Legacy demo rows do not always have an id/clientKey, so use the UI index first.
       const line = Number.isInteger(item.index) ? o.labor[item.index] : o.labor.find(l => l.id === item.id || l.clientKey === item.clientKey);
@@ -80,7 +92,8 @@ const Api = (() => {
      if (resource === 'claim') { o.claim = String(body.claim || '').trim(); o.claimPendingReminder = !o.claim && !!body.pending; }
     if (resource === 'control') { o.controlDone = true; o.controlAt = new Date().toISOString(); o.status = 'LISTA_PARA_ENTREGA'; }
     o.version = (+o.version || 0) + 1;
-    state.audit.unshift({ when: new Date().toLocaleString('es-PE'), event: `${o.number}: ${resource}`, user: user.nombres });
+     const event = resource === 'case-details' ? 'datos operativos actualizados' : resource;
+     state.audit.unshift({ when: new Date().toLocaleString('es-PE'), event: `${o.number}: ${event}`, user: user.nombres });
   }
 
   async function command(o, resource, body = {}) {
@@ -101,8 +114,8 @@ const Api = (() => {
     const created = {
       id, version: 0, number: `OS-2026-${String(150 + id).padStart(5, '0')}`, code,
       client: d.client, doc: d.doc, phone: d.phone, email: d.email, plate: d.plate,
-      brand: d.brand, model: d.model, color: d.color, body: d.body, mode: d.mode,
-      claim: d.claim, advisor: user.nombres, status: 'COTIZACION_PENDIENTE', quote: 'PENDIENTE',
+       brand: d.brand, model: d.model, color: d.color, colorType: d.colorType || 'CATALOGO', body: d.body, mode: d.mode,
+       claim: d.claim, claimPendingReminder: !d.claim && !!d.claimPendingReminder, advisor: user.nombres, status: 'COTIZACION_PENDIENTE', quote: 'PENDIENTE',
       labor: [], quoteParts: [], parts: [], controlDone: false,
       publicStatus: 'COTIZACION_PENDIENTE', createdAt: new Date().toISOString(), createdBy: user.nombres,
       reception: { ...copyReception(d), createdAt: new Date().toISOString(), createdBy: user.nombres, checklistReviewedAt: new Date().toISOString(), checklistReviewedBy: user.nombres }

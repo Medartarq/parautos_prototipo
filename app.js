@@ -21,6 +21,7 @@ const RECEPTION_FLAGS=[
  ['Estacionamiento',['Estacionamiento reservado: el vehículo no puede ser movido']]];
 const ALL_FLAGS=RECEPTION_FLAGS.flatMap(([g,items])=>items);
 const STEPS=['Datos','Checklist','Consideraciones','Daños','Evidencias','Diagnóstico','Resumen'];
+const COLOR_OPTIONS=['Blanco','Negro','Gris','Plata','Rojo','Azul','Verde','Amarillo','Beige','Marrón','Naranja'];
 
 const seed=[
  {id:1,number:'OS-2026-00148',code:'P4R148AX',client:'María Salazar',doc:'42630182',plate:'ABC-240',brand:'Subaru',model:'Forester',color:'Rojo',body:'V4',mode:'Mapfre',claim:'MAP-90812',status:'COTIZACION_PENDIENTE',quote:'PENDIENTE',advisor:'Christian Cavero',parts:[],labor:[{d:'Reparación de parachoques',q:1,p:380}],quoteParts:[{d:'Pintura e insumos',q:1,p:190}]},
@@ -29,7 +30,7 @@ const seed=[
  {id:4,number:'OS-2026-00151',code:'R8B151NP',client:'Carlos Ruiz',doc:'18422960',plate:'M3H-104',brand:'Mitsubishi',model:'Outlander',color:'Gris',body:'V4',mode:'Pacífico',claim:'PAC-88340',status:'EN_REPARACION',quote:'APROBADA',advisor:'Rosa Méndez',parts:[{name:'Puerta posterior',qty:1,status:'RECIBIDO'}],labor:[],quoteParts:[]},
  {id:5,number:'OS-2026-00152',code:'D5S152EV',client:'Jorge Pérez',doc:'46330117',plate:'F2P-778',brand:'Hino',model:'Dutro',color:'Blanco',body:'V1',mode:'La Positiva',claim:'POS-12890',status:'LISTA_PARA_ENTREGA',quote:'APROBADA',advisor:'Christian Cavero',parts:[],labor:[],quoteParts:[],controlDone:true}
 ];
-const freshDraft=()=>({doc:'',client:'',phone:'',email:'',plate:'',mode:'',claim:'',brand:'',model:'',color:'',year:'',vin:'',km:'',fuel:'',body:'V3',view:'01',check:Object.fromEntries(ALL_CHECK.map(item=>[item,''])),notes:{},drawings:{},drawingsV:2,flags:[],photos:[],diagnosis:'',diagnosisPhoto:'',signature:'',accept:false});
+const freshDraft=()=>({doc:'',client:'',phone:'',email:'',plate:'',mode:'',claim:'',brand:'',model:'',color:'',colorType:'CATALOGO',year:'',vin:'',km:'',fuel:'',body:'V3',view:'01',check:Object.fromEntries(ALL_CHECK.map(item=>[item,''])),notes:{},drawings:{},drawingsV:2,flags:[],photos:[],diagnosis:'',diagnosisPhoto:'',signature:'',accept:false});
 const STORAGE_KEY='parautos-apf2-static-v1';
 const LEGACY_STORAGE_KEY='parautosPrototypeV3';
 const storedRaw=localStorage.getItem(STORAGE_KEY)||localStorage.getItem(LEGACY_STORAGE_KEY);
@@ -46,7 +47,8 @@ function normalizeState(s){
    x.draft={...freshDraft(),...(x.draft||{})};x.draft.check||={};ALL_CHECK.forEach(item=>{if(!['SI','NO'].includes(x.draft.check[item]))x.draft.check[item]=''});
  x.draft.drawings||={};x.draft.photos||=[];x.audit||=[];
  if(x.draft.drawingsV!==2){x.draft.drawings={};x.draft.drawingsV=2;}
- x.draft.flags=Array.isArray(x.draft.flags)?x.draft.flags:[];
+  x.draft.flags=Array.isArray(x.draft.flags)?x.draft.flags:[];
+  x.draft.colorType=x.draft.colorType==='PERSONALIZADO'||(x.draft.color&&!COLOR_OPTIONS.includes(x.draft.color))?'PERSONALIZADO':'CATALOGO';
  x.orders.forEach(o=>{if(o.brand)o.brand=String(o.brand).toUpperCase();if(o.model)o.model=String(o.model).toUpperCase();
  o.labor=(Array.isArray(o.labor)?o.labor:[]).map(x=>{if(x.ok!==undefined)x.ok=(x.ok===true||x.ok==='CONFORME');return x});o.quoteParts=Array.isArray(o.quoteParts)?o.quoteParts:[];o.parts=Array.isArray(o.parts)?o.parts:[]});
  if(x.draft.brand)x.draft.brand=String(x.draft.brand).toUpperCase();
@@ -295,11 +297,26 @@ state.orders.forEach(normalizeQuoteExtensions);
 const originalRender=render;
 render=()=>{originalRender();const alert=$('#alertCount');if(alert)alert.textContent=state.orders.filter(o=>o.quote==='PENDIENTE'||isClaimPending(o)).length};
 const originalWizard=wizard;
-wizard=()=>{originalWizard();if(state.step!==1)return;const claim=$('[data-bind="claim"]');if(!claim)return;const field=claim.closest('.field');field.insertAdjacentHTML('beforeend',`<label class="toggle-row" style="margin-top:8px"><span>Número de siniestro pendiente: crear recordatorio</span><input type="checkbox" data-bind="claimPendingReminder" ${state.draft.claimPendingReminder?'checked':''}></label>`)};
+wizard=()=>{originalWizard();if(state.step!==1)return;const claim=$('[data-bind="claim"]');if(!claim)return;const field=claim.closest('.field');field.insertAdjacentHTML('beforeend',`<label class="claim-reminder"><span><strong>Número de siniestro pendiente</strong><small>Crea un aviso visible en el resumen hasta registrar el código.</small></span><input type="checkbox" data-bind="claimPendingReminder" ${state.draft.claimPendingReminder?'checked':''}></label>`)};
 const originalValidateStep1=validateStep1;
 validateStep1=d=>isClaimPending(d)?originalValidateStep1({...d,claim:d.claim||'PENDIENTE'}):originalValidateStep1(d);
 
 const originalDashboard=dashboard;
+const colorWizard=wizard;
+wizard=()=>{
+ colorWizard();
+ if(state.step!==1)return;
+ const select=$('[data-bind="color"]');
+ if(!select)return;
+ const draft=state.draft,custom=draft.colorType==='PERSONALIZADO';
+ [...select.options].find(option=>option.textContent==='Otro')?.remove();
+ const customOption=document.createElement('option');customOption.value='__CUSTOM__';customOption.textContent='Otro color (especificar)';select.appendChild(customOption);
+ if(custom){select.removeAttribute('data-bind');select.value='__CUSTOM__';const bodyField=$('[data-bind="body"]')?.closest('.field');bodyField?.insertAdjacentHTML('afterend',`<div class="field full color-custom-field"><label for="customColor">Color personalizado</label><small class="hint color-custom-hint">El nombre se conservará solo en esta orden.</small><input id="customColor" data-bind="color" value="${caseEscape(draft.color)}" placeholder="Ej. Gris Nardo o Blanco perla" maxlength="40" autocomplete="off"></div>`);$('#customColor').oninput=event=>{draft.color=event.target.value;draft.colorType='PERSONALIZADO';save()}}
+ else select.value=draft.color||'';
+ select.onchange=event=>{if(event.target.value==='__CUSTOM__'){draft.colorType='PERSONALIZADO';draft.color='';wizard();return}draft.colorType='CATALOGO';draft.color=event.target.value;wizard()};
+};
+const validateColorStep=validateStep1;
+validateStep1=d=>{if(d.colorType==='PERSONALIZADO'){const normalized=String(d.color||'').trim().replace(/\s+/g,' ');if(!/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ][A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]{1,39}$/.test(normalized))return{level:'error',msg:'Especifica un color personalizado válido (2 a 40 letras).'};d.color=normalized}return validateColorStep(d)};
 dashboard=()=>{originalDashboard();const pending=state.orders.filter(isClaimPending);if(!pending.length)return;const cards=$('#app .cards');cards?.insertAdjacentHTML('beforeend',`<div class="card metric amber"><small>Siniestros por registrar</small><strong>${pending.length}</strong></div>`);const priorities=$('#app .grid-2 section.card');priorities?.insertAdjacentHTML('afterbegin',`<div class="important"><strong>Recordatorio de siniestros:</strong> ${pending.map(o=>`${o.number} · ${o.plate}`).join(' · ')}</div>`) };
 const originalDetail=detail;
 detail=()=>{originalDetail();const o=state.orders.find(x=>x.id===state.selected);if(!o||state.tab!=='summary'||!isClaimPending(o))return;const target=$('#app .grid-2');target?.insertAdjacentHTML('afterbegin',`<section class="card"><div class="card-header"><h2>Siniestro pendiente</h2><span class="status amber">Recordatorio activo</span></div><div class="card-body"><p class="important">Registra el número de siniestro para retirar este recordatorio.</p><div class="form-grid"><div class="field"><label>Número de siniestro<input id="claimNumber" value="" placeholder="Ej. MAP-90812"></label></div></div><button class="btn primary" id="saveClaimNumber">Guardar número de siniestro</button></div></section>`);$('#saveClaimNumber')?.addEventListener('click',()=>{const claim=$('#claimNumber').value.trim();if(!claim)return toast('Ingresa el número de siniestro');Api.command(o,'claim',{claim,pending:false})})};
@@ -430,10 +447,18 @@ setTimeout(()=>{
   if(!controls||controls.querySelector('[data-diagnosis-reference]'))return;
   const button=document.createElement('button');button.type='button';button.className='diagnosis-reference-button';button.dataset.diagnosisReference='';button.innerHTML='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Zm9.5 3.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4Z"/></svg><span>Ver diagnóstico</span>';button.onclick=()=>openDiagnosisReference(order);controls.insertBefore(button,currency);
  }
+ function mountSummaryTools(){
+  const order=state.orders.find(item=>item.id===state.selected),target=$('#app .grid-2');
+  if(!order||!target||$('#summaryTools'))return;
+  const reception=order.reception||{},pending=isClaimPending(order),colors=[...COLOR_OPTIONS,order.color].filter((value,index,list)=>value&&list.indexOf(value)===index);
+  target.insertAdjacentHTML('afterend',`<div id="summaryTools">${pending?`<section class="card claim-summary-reminder"><div class="claim-summary-icon">!</div><div><strong>Número de siniestro pendiente</strong><p>Este caso tiene un recordatorio activo. Registra el código para completar los datos de la aseguradora.</p></div><div class="claim-summary-action"><input id="summaryClaimNumber" placeholder="Ej. MAP-90812" aria-label="Número de siniestro"><button class="btn primary" id="saveSummaryClaim">Guardar código</button></div></section>`:''}<section class="card case-details-editor"><div class="card-header"><div><h2>Datos operativos</h2><small>Actualiza información de contacto e ingreso sin modificar la identidad del caso.</small></div><button class="btn primary" id="saveCaseDetails">Guardar cambios</button></div><div class="card-body"><div class="form-grid"><div class="field"><label>Cliente<input id="summaryClient" value="${caseEscape(order.client)}" autocomplete="name"></label></div><div class="field"><label>Teléfono<input id="summaryPhone" value="${caseEscape(order.phone)}" inputmode="numeric" autocomplete="tel"></label></div><div class="field"><label>Correo<input id="summaryEmail" value="${caseEscape(order.email)}" type="email" autocomplete="email"></label></div><div class="field"><label>Color<input id="summaryColor" value="${caseEscape(order.color)}" list="summaryColors" maxlength="40"></label><datalist id="summaryColors">${colors.map(color=>`<option value="${caseEscape(color)}">`).join('')}</datalist></div><div class="field"><label>Kilometraje (km)<input id="summaryKm" value="${caseEscape(reception.km)}" inputmode="numeric" maxlength="7"></label></div><div class="field"><label>Combustible<select id="summaryFuel"><option value="">No registrado</option>${['Vacío','1/4','1/2','3/4','Lleno'].map(value=>`<option value="${value}" ${reception.fuel===value?'selected':''}>${value}</option>`).join('')}</select></label></div></div></div></section></div>`);
+  $('#saveSummaryClaim')?.addEventListener('click',()=>{const claim=$('#summaryClaimNumber').value.trim();if(!claim)return toast('Ingresa el número de siniestro');Api.command(order,'claim',{claim,pending:false})});
+  $('#saveCaseDetails').onclick=()=>{const data={client:$('#summaryClient').value.trim(),phone:$('#summaryPhone').value.trim(),email:$('#summaryEmail').value.trim(),color:$('#summaryColor').value.trim(),km:$('#summaryKm').value.trim(),fuel:$('#summaryFuel').value,repairResponsible:order.repairResponsible||''};if(data.phone&&!/^\d{7,15}$/.test(data.phone))return toast('El celular debe tener entre 7 y 15 dígitos.');if(data.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email))return toast('Correo electrónico inválido.');if(data.km&&!/^\d{1,7}$/.test(data.km))return toast('El kilometraje debe ser numérico.');if(data.color&&!/^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ][A-Za-zÁÉÍÓÚÜÑáéíóúüñ ]{1,39}$/.test(data.color))return toast('El color debe tener entre 2 y 40 letras.');data.colorType=COLOR_OPTIONS.includes(data.color)?'CATALOGO':'PERSONALIZADO';Api.command(order,'case-details',{data})};
+ }
  const detailWithDiagnosisReference=detail;
- detail=()=>{detailWithDiagnosisReference();if(state.tab==='quote')mountDiagnosisReferenceButton();else closeDiagnosisReference()};
+ detail=()=>{detailWithDiagnosisReference();if(state.tab==='quote')mountDiagnosisReferenceButton();else closeDiagnosisReference();if(state.tab==='summary')mountSummaryTools()};
  addEventListener('resize',()=>{if(!desktopDiagnosis())closeDiagnosisReference()});
- requestAnimationFrame(()=>{if(state.route==='detail'&&state.tab==='quote')mountDiagnosisReferenceButton()});
+ requestAnimationFrame(()=>{if(state.route!=='detail')return;if(state.tab==='quote')mountDiagnosisReferenceButton();if(state.tab==='summary')mountSummaryTools()});
 },0);
 
 function partOrder(id){return state.orders.find(order=>order.id===+id)}
